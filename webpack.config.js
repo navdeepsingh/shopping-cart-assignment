@@ -1,41 +1,80 @@
+const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const HandlebarsWebpackPlugin = require("handlebars-webpack-plugin");
+const { merge } = require("webpack-merge");
 const path = require("path");
-const app = path.resolve(__dirname, "src", "js", "index.js");
 
-module.exports = {
-  entry: {
-    styles: "./src/js/styles.js",
-    main: "./src/js/index.js",
-  },
-  mode: "development",
-  output: {
-    filename: "[name].bundle.js",
-    path: path.resolve(__dirname, "dist"),
-  },
-  module: {
-    rules: [
-      {
-        test: /\.m?js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ["@babel/preset-env"],
-            plugins: ["@babel/plugin-transform-runtime"],
-          },
-        },
+const modeConfig = (env) => require(`./build-utils/webpack.${env}`)();
+
+module.exports = ({ mode } = { mode: "production" }) => {
+  return merge(
+    {
+      mode: "none",
+      entry: {
+        index: "./src/index.js",
+        products: "./src/products.js",
+        styles: "./src/styles.js",
+        signin: "./src/signin.js",
+        register: "./src/register.js",
       },
-      {
-        test: /\.s[ac]ss$/i,
-        exclude: /node_modules/,
-        use: [
-          // Creates `style` nodes from JS strings
-          "style-loader",
-          // Translates CSS into CommonJS
-          "css-loader",
-          // Compiles Sass to CSS
-          "sass-loader",
+      module: {
+        rules: [
+          {
+            test: /\.handlebars$/,
+            loader: "handlebars-loader",
+            options: {
+              runtime: path.resolve(
+                __dirname,
+                "node_modules/handlebars/runtime"
+              ),
+            },
+          },
+          {
+            test: /\.(png|jpe?g|gif)$/i,
+            include: path.join(__dirname, "static"),
+            use: [
+              {
+                loader: "url-loader",
+                options: {
+                  limit: 8192,
+                },
+              },
+            ],
+          },
         ],
       },
-    ],
-  },
+      plugins: [
+        new HtmlWebpackPlugin({
+          title: "Shopping Cart :: Index Page",
+          chunks: ["index", "styles"],
+        }),
+        new HtmlWebpackPlugin({
+          title: "Shopping Cart :: Products Page",
+          filename: "products.html",
+          chunks: ["products", "styles"],
+        }),
+        new HtmlWebpackPlugin({
+          title: "Shopping Cart :: Login Page",
+          filename: "signin.html",
+          chunks: ["signin", "styles"],
+        }),
+        new HtmlWebpackPlugin({
+          title: "Shopping Cart :: Register Page",
+          filename: "register.html",
+          chunks: ["register", "styles"],
+        }),
+      ],
+      devServer: {
+        static: {
+          directory: path.resolve(__dirname, "./static"),
+          publicPath: "/static",
+        },
+        compress: true,
+        headers: {
+          "Cache-Control": "max-age=31536000",
+        },
+      },
+    },
+    modeConfig(mode)
+  );
 };
