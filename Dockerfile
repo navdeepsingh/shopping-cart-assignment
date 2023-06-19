@@ -18,3 +18,5 @@ RUN npm run build
 
 # Expose the port your application listens on
 EXPOSE 3000
+
+CMD ["npm", "install]
